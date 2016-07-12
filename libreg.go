@@ -13,7 +13,7 @@ type Initialize func(addrs []string, options *registry.Config) (registry.Registr
 
 var (
 	// Backend initializers
-	initializers = make(map[reg.Backend]Initialize)
+	initializers = make(map[registry.Backend]Initialize)
 
 	supportedBackend = func() string {
 		keys := make([]string, 0, len(initializers))
