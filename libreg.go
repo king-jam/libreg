@@ -1,4 +1,4 @@
-package libkv
+package libreg
 
 import (
 	"fmt"
