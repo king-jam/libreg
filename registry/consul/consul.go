@@ -31,7 +31,7 @@ type Consul struct {
 	client *api.Client
 }
 
-// Register registers consul to libkv
+// Register registers consul to libreg
 func Register() {
 	libreg.AddRegistry(registry.CONSUL, New)
 }
