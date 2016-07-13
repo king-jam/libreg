@@ -86,6 +86,7 @@ func (s *Consul) setTimeout(time time.Duration) {
 
 func (s *Consul) Register(reg *registry.CatalogRegistration, options *registry.WriteOptions) error {
 	catalog := s.client.Catalog()
+	writeOps := s.getWriteOptions(options)
 	_, err := catalog.Register(
 		&api.CatalogRegistration{
 			Node:       reg.Node,
@@ -94,16 +95,15 @@ func (s *Consul) Register(reg *registry.CatalogRegistration, options *registry.W
 			Service:    &api.AgentService{},
 			Check:      &api.AgentCheck{},
 		},
-		&api.WriteOptions{
-			Datacenter: options.Datacenter,
-			Token:      options.Token,
-		})
+		writeOps,
+	)
 	return err
 }
 
 // Deregister removes a node, service or check
 func (s *Consul) Deregister(dereg *registry.CatalogDeregistration, options *registry.WriteOptions) error {
 	catalog := s.client.Catalog()
+	writeOps := s.getWriteOptions(options)
 	_, err := catalog.Deregister(
 		&api.CatalogDeregistration{
 			Node:       dereg.Node,
@@ -112,10 +112,8 @@ func (s *Consul) Deregister(dereg *registry.CatalogDeregistration, options *regi
 			ServiceID:  dereg.ServiceID,
 			CheckID:    dereg.CheckID,
 		},
-		&api.WriteOptions{
-			Datacenter: options.Datacenter,
-			Token:      options.Token,
-		})
+		writeOps,
+	)
 	return err
 }
 
@@ -129,8 +127,8 @@ func (s *Consul) Datacenters() ([]string, error) {
 // Nodes lists all nodes in a given DC
 func (s *Consul) Nodes(options *registry.QueryOptions) ([]*registry.Node, error) {
 	catalog := s.client.Catalog()
-	nodes, _, err := catalog.Nodes(
-		&api.QueryOptions{})
+	queryOps := s.getQueryOptions(options)
+	nodes, _, err := catalog.Nodes(queryOps)
 	var retNodes []*registry.Node
 	for _, v := range nodes {
 		retNodes = append(retNodes, &registry.Node{
@@ -144,18 +142,19 @@ func (s *Consul) Nodes(options *registry.QueryOptions) ([]*registry.Node, error)
 // Services lists all services in a given DC
 func (s *Consul) Services(options *registry.QueryOptions) (map[string][]string, error) {
 	catalog := s.client.Catalog()
-	services, _, err := catalog.Services(
-		&api.QueryOptions{})
+	queryOps := s.getQueryOptions(options)
+	services, _, err := catalog.Services(queryOps)
 	return services, err
 }
 
 // Service lists the nodes in a given service
 func (s *Consul) Service(service, tag string, options *registry.QueryOptions) ([]*registry.CatalogService, error) {
 	catalog := s.client.Catalog()
+	queryOps := s.getQueryOptions(options)
 	services, _, err := catalog.Service(
 		service,
 		tag,
-		&api.QueryOptions{})
+		queryOps)
 	var retServices []*registry.CatalogService
 	for _, v := range services {
 		retServices = append(retServices, &registry.CatalogService{
@@ -175,17 +174,11 @@ func (s *Consul) Service(service, tag string, options *registry.QueryOptions) ([
 // Node lists the services provided by a given node
 func (s *Consul) Node(node string, options *registry.QueryOptions) (*registry.CatalogNode, error) {
 	catalog := s.client.Catalog()
+	queryOps := s.getQueryOptions(options)
 	n, _, err := catalog.Node(
 		node,
-		&api.QueryOptions{
-			Datacenter:        options.Datacenter,
-			AllowStale:        options.AllowStale,
-			RequireConsistent: options.RequireConsistent,
-			WaitIndex:         options.WaitIndex,
-			WaitTime:          options.WaitTime,
-			Token:             options.Token,
-			Near:              options.Near,
-		})
+		queryOps,
+	)
 	var retNode *registry.Node = &registry.Node{
 		Node:    n.Node.Node,
 		Address: n.Node.Address,
@@ -205,4 +198,32 @@ func (s *Consul) Node(node string, options *registry.QueryOptions) (*registry.Ca
 		Node:     retNode,
 		Services: retService,
 	}, err
+}
+
+func (s *Consul) getWriteOptions(options *registry.WriteOptions) *api.WriteOptions {
+	ops := &api.WriteOptions{}
+	if options != nil {
+		if options.Datacenter != "" {
+			ops.Datacenter = options.Datacenter
+		}
+		if options.Token != "" {
+			ops.Token = options.Token
+		}
+	}
+	return ops
+
+}
+
+func (s *Consul) getQueryOptions(options *registry.QueryOptions) *api.QueryOptions {
+	ops := &api.QueryOptions{}
+	if options != nil {
+		ops.Datacenter = options.Datacenter
+		ops.AllowStale = options.AllowStale
+		ops.RequireConsistent = options.RequireConsistent
+		ops.WaitIndex = options.WaitIndex
+		ops.WaitTime = options.WaitTime
+		ops.Token = options.Token
+		ops.Near = options.Near
+	}
+	return ops
 }
