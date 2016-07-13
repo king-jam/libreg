@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	// ErrBackendNotSupported is thrown when the backend registry is not supported by libkv
+	// ErrBackendNotSupported is thrown when the backend registry is not supported by libreg
 	ErrBackendNotSupported = errors.New("Backend registry not supported yet, please choose one of")
 	// ErrCallNotSupported is thrown when a method is not implemented/supported by the current registry
 	ErrCallNotSupported = errors.New("The current call is not supported with this backend")
