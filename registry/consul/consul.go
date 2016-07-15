@@ -92,8 +92,24 @@ func (s *Consul) Register(reg *registry.CatalogRegistration, options *registry.W
 			Node:       reg.Node,
 			Address:    reg.Address,
 			Datacenter: reg.Datacenter,
-			Service:    &api.AgentService{},
-			Check:      &api.AgentCheck{},
+			Service: &api.AgentService{
+				ID:                reg.Service.ID,
+				Service:           reg.Service.Service,
+				Tags:              reg.Service.Tags,
+				Port:              reg.Service.Port,
+				Address:           reg.Service.Address,
+				EnableTagOverride: reg.Service.EnableTagOverride,
+			},
+			Check: &api.AgentCheck{
+				Node:        reg.Check.Node,
+				CheckID:     reg.Check.CheckID,
+				Name:        reg.Check.Name,
+				Status:      reg.Check.Status,
+				Notes:       reg.Check.Notes,
+				Output:      reg.Check.Output,
+				ServiceID:   reg.Check.ServiceID,
+				ServiceName: reg.Check.ServiceName,
+			},
 		},
 		writeOps,
 	)
@@ -179,6 +195,13 @@ func (s *Consul) Node(node string, options *registry.QueryOptions) (*registry.Ca
 		node,
 		queryOps,
 	)
+	if err != nil {
+		return nil, err
+	}
+	if n == nil {
+		return nil, nil
+	}
+
 	var retNode *registry.Node = &registry.Node{
 		Node:    n.Node.Node,
 		Address: n.Node.Address,
@@ -215,6 +238,9 @@ func (s *Consul) getWriteOptions(options *registry.WriteOptions) *api.WriteOptio
 }
 
 func (s *Consul) getQueryOptions(options *registry.QueryOptions) *api.QueryOptions {
+	if options == nil {
+		return nil
+	}
 	ops := &api.QueryOptions{}
 	if options != nil {
 		ops.Datacenter = options.Datacenter
