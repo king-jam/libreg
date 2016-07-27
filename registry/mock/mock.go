@@ -24,10 +24,15 @@ func New(endpoints []string, options *registry.Config) (registry.Registry, error
 }
 
 // GetSearchTerms returns the whitelist of SSDP URNs to act on
-func (m *Mock) GetCatalog() map[*registry.CatalogRegistration]bool {
+func (m *Mock) GetCatalog() map[registry.CatalogRegistration]bool {
+	c := make(map[registry.CatalogRegistration]bool)
+
 	m.RLock()
-	c := m.Catalog
+	for r := range m.Catalog {
+		c[*r] = true
+	}
 	m.RUnlock()
+
 	return c
 }
 
@@ -44,17 +49,17 @@ func (m *Mock) Register(reg *registry.CatalogRegistration, options *registry.Wri
 
 // Deregister removes a node, service or check
 func (m *Mock) Deregister(dereg *registry.CatalogDeregistration, options *registry.WriteOptions) error {
-	for reg := range m.GetCatalog() {
+	m.Lock()
+	for reg := range m.Catalog {
 		if dereg.Node == reg.Node &&
 			dereg.Address == reg.Address &&
 			dereg.Datacenter == reg.Datacenter &&
 			dereg.ServiceID == reg.Service.ID &&
 			dereg.CheckID == reg.Check.CheckID {
-			m.Lock()
 			delete(m.Catalog, reg)
-			m.Unlock()
 		}
 	}
+	m.Unlock()
 
 	return nil
 }
@@ -95,7 +100,8 @@ func (m *Mock) Nodes(options *registry.QueryOptions) ([]*registry.Node, error) {
 func (m *Mock) Services(options *registry.QueryOptions) (map[string][]string, error) {
 	serviceMap := make(map[string][]string)
 
-	for r := range m.GetCatalog() {
+	catalog := m.GetCatalog()
+	for r := range catalog {
 		serviceMap[r.Service.Service] = append(serviceMap[r.Service.Service], r.Service.Tags...)
 		if serviceMap[r.Service.Service] == nil {
 			s := []string{}
