@@ -12,6 +12,9 @@ type Backend string
 const (
 	// CONSUL backend
 	CONSUL Backend = "consul"
+
+	// MOCK backend
+	MOCK Backend = "mock"
 )
 
 var (
