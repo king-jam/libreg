@@ -115,7 +115,9 @@ func (m *Mock) Services(options *registry.QueryOptions) (map[string][]string, er
 // Service lists the nodes in a given service
 func (m *Mock) Service(service, tag string, options *registry.QueryOptions) ([]*registry.CatalogService, error) {
 	var c []*registry.CatalogService
-
+	if service == "service_error_injection" {
+		return nil, errors.New("Service Error Injection")
+	}
 	for r := range m.GetCatalog() {
 		containsTag := false
 
